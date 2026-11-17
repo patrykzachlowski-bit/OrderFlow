@@ -1,0 +1,17 @@
+{
+  "_source": "Product Owner, sesja REF-A-20261117-DP4-7CYCZ4G7, 17.11.2026, pytania 1-34",
+  "_scope": "Dedykowana operacja anulowania bez zmian standardowego procesu zmiany statusu",
+  "statuses": {
+    "NEW": {"allowed": true, "max_age_minutes": null},
+    "PAID": {"allowed": true, "max_age_minutes": 30},
+    "PROCESSING": {"allowed": true, "max_age_minutes": 15},
+    "SHIPPED": {"allowed": false, "max_age_minutes": null},
+    "DELIVERED": {"allowed": false, "max_age_minutes": null},
+    "CANCELLED": {"allowed": false, "max_age_minutes": null}
+  },
+  "payment_notices": {
+    "CARD": true,
+    "TRANSFER": true,
+    "CASH_ON_DELIVERY": false
+  }
+}

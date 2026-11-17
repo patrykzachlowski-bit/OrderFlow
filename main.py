@@ -1,5 +1,6 @@
 """Punkt wejścia do aplikacji OrderFlow."""
 
+from cancellation import load_cancellation_policy, evaluate_cancellation, mark_order_cancelled
 from customers import find_customer_by_id, get_customer_name, load_customers
 from orders import (
     DELIVERY_METHODS,
@@ -36,6 +37,7 @@ def show_menu():
     print("3. Utwórz zamówienie")
     print("4. Zmień status zamówienia")
     print("5. Raport zamówień")
+    print("6. Anuluj zamówienie")
     print("0. Zakończ")
     print("-" * 44)
 
@@ -214,6 +216,47 @@ def handle_status_change():
     print(f'Status zamówienia {order["id"]} zmieniono na {new_status}.\n')
 
 
+
+def handle_order_cancellation():
+    """Odrębna operacja anulowania zamówienia z potwierdzeniem."""
+    order_id = input("Podaj ID zamówienia do anulowania: ").strip()
+    orders = load_orders()
+    try:
+        policy = load_cancellation_policy()
+    except (OSError, ValueError) as error:
+        print(f"Nie można wczytać reguł anulowania: {error}\\n")
+        return
+
+    decision = evaluate_cancellation(orders, order_id, policy)
+    if not decision.allowed:
+        print(f"{decision.message}\\n")
+        return
+
+    order = find_order_by_id(orders, order_id)
+    print(f'Zamówienie: {order["id"]} | status: {order["status"]}')
+    confirmation = input("Potwierdzić anulowanie? [t/N]: ").strip().lower()
+    if confirmation not in ("t", "tak"):
+        print("Przerwano. Dane zamówienia nie zostały zmienione.\\n")
+        return
+
+    # Ponowny odczyt i sprawdzenie przed aktualizacją stanu.
+    orders = load_orders()
+    result = mark_order_cancelled(orders, order_id, policy)
+    if not result.allowed:
+        print(f"{result.message}\\n")
+        return
+
+    try:
+        save_orders(orders)
+    except RuntimeError as error:
+        print(f"Nie udało się zapisać anulowania: {error}\\n")
+        return
+    print(f'Anulowano zamówienie {order_id.strip().upper()}.')
+    if result.payment_notice:
+        print(result.payment_notice)
+    print()
+
+
 def handle_order_report():
     """Obsługuje wyświetlenie podsumowania zamówień."""
     show_section("RAPORT ZAMÓWIEŃ", 50)
@@ -228,6 +271,7 @@ def main():
         "3": handle_order_creation,
         "4": handle_status_change,
         "5": handle_order_report,
+        "6": handle_order_cancellation,
     }
 
     while True:
